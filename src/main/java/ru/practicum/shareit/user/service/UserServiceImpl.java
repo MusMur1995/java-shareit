@@ -5,25 +5,33 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.user.repository.UserRepository;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Не найден пользователь с id: " + userId));
+    }
+
+    private void validateEmailFormat(String email) {
+        if (!email.contains("@")) {
+            throw new ValidationException("Некорректный формат email");
+        }
+    }
+
     @Override
     public List<UserDto> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(UserMapper::toUserDto)
-                .collect(Collectors.toList());
+        return UserMapper.toDto(userRepository.findAll());
     }
 
     @Override
@@ -32,9 +40,7 @@ public class UserServiceImpl implements UserService {
             throw new ValidationException("Email не может быть пустым");
         }
 
-        if (!userDto.getEmail().contains("@")) {
-            throw new ValidationException("Некорректный формат email");
-        }
+        validateEmailFormat(userDto.getEmail());
 
         boolean emailExists = userRepository.findAll().stream()
                 .anyMatch(user -> user.getEmail().equals(userDto.getEmail()));
@@ -42,30 +48,27 @@ public class UserServiceImpl implements UserService {
             throw new ConflictException("Эмейл уже существует");
         }
 
-        User user = UserMapper.toUser(userDto);
-        return UserMapper.toUserDto(userRepository.save(user));
+        User user = UserMapper.toEntity(userDto);
+        return UserMapper.toDto(userRepository.save(user));
     }
 
     @Override
     public UserDto getUserById(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден с id: " + userId));
-        return UserMapper.toUserDto(user);
+        User user = findUserById(userId);
+        return UserMapper.toDto(user);
     }
 
     @Override
     public UserDto updateUser(Long userId, UserDto userDto) {
-        User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден с id: " + userId));
+        User existingUser = findUserById(userId);
 
         if (userDto.getName() != null && !userDto.getName().isBlank()) {
             existingUser.setName(userDto.getName());
         }
 
         if (userDto.getEmail() != null && !userDto.getEmail().isBlank()) {
-            if (!userDto.getEmail().contains("@")) {
-                throw new ValidationException("Некорректный формат email");
-            }
+
+            validateEmailFormat(userDto.getEmail());
 
             Optional<User> userWithSameEmail = userRepository.findByEmail(userDto.getEmail());
             if (userWithSameEmail.isPresent() && !userWithSameEmail.get().getId().equals(userId)) {
@@ -75,7 +78,7 @@ public class UserServiceImpl implements UserService {
             existingUser.setEmail(userDto.getEmail());
         }
 
-        return UserMapper.toUserDto(existingUser);
+        return UserMapper.toDto(existingUser);
     }
 
     @Override
