@@ -10,19 +10,24 @@ import java.util.stream.Collectors;
 public class ItemMapper {
 
     public static ItemDto toDto(Item item) {
-        return new ItemDto(
-                item.getId(),
-                item.getName(),
-                item.getDescription(),
-                item.isAvailable(),
-                item.getRequest() != null ? item.getRequest().getId() : null);
+        ItemDto dto = new ItemDto();
+        dto.setId(item.getId());
+        dto.setName(item.getName());
+        dto.setDescription(item.getDescription());
+        dto.setAvailable(item.isAvailable());
+
+        if (item.getRequest() != null) {
+            dto.setRequestId(item.getRequest().getId());
+        }
+
+        return dto;
     }
 
     public static Item toEntity(ItemDto itemDto, User owner) {
         Item item = new Item();
         item.setName(itemDto.getName());
         item.setDescription(itemDto.getDescription());
-        item.setAvailable(itemDto.getAvailable());
+        item.setAvailable(itemDto.getAvailable() != null ? itemDto.getAvailable() : true);
         item.setOwner(owner);
         return item;
     }
