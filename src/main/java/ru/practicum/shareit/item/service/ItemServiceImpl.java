@@ -1,6 +1,5 @@
 package ru.practicum.shareit.item.service;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,27 +48,23 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> getUserItems(Long userId) {
-        findUserById(userId); // Проверка существования пользователя
+        findUserById(userId);
 
         List<Item> items = itemRepository.findByOwnerId(userId);
         List<Long> itemIds = items.stream()
                 .map(Item::getId)
                 .collect(Collectors.toList());
 
-        // Получаем все комментарии для вещей пользователя
         Map<Long, List<CommentDto>> commentsByItemId = getCommentsForItems(itemIds);
 
-        // Получаем даты бронирований для каждой вещи
         LocalDateTime now = LocalDateTime.now();
 
         return items.stream()
                 .map(item -> {
                     ItemDto itemDto = ItemMapper.toDto(item);
 
-                    // Добавляем последнее и следующее бронирование
                     addBookingDatesToItemDto(itemDto, item.getId(), now);
 
-                    // Добавляем комментарии
                     itemDto.setComments(commentsByItemId.getOrDefault(item.getId(), Collections.emptyList()));
 
                     return itemDto;
@@ -84,12 +79,10 @@ public class ItemServiceImpl implements ItemService {
 
         LocalDateTime now = LocalDateTime.now();
 
-        // Если пользователь - владелец вещи, показываем даты бронирований
         if (userId != null && item.getOwner().getId().equals(userId)) {
             addBookingDatesToItemDto(itemDto, itemId, now);
         }
 
-        // Добавляем комментарии
         List<Comment> comments = commentRepository.findByItemId(itemId);
         itemDto.setComments(CommentMapper.toDto(comments));
 
@@ -97,12 +90,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private void addBookingDatesToItemDto(ItemDto itemDto, Long itemId, LocalDateTime now) {
-        // Последнее бронирование (прошедшее или текущее)
         bookingRepository.findFirstByItemIdAndStatusAndStartBeforeOrderByStartDesc(
                         itemId, BookingStatus.APPROVED, now)
                 .ifPresent(booking -> itemDto.setLastBooking(BookingMapper.toShortDto(booking)));
 
-        // Следующее бронирование (будущее)
         bookingRepository.findFirstByItemIdAndStatusAndStartAfterOrderByStartAsc(
                         itemId, BookingStatus.APPROVED, now)
                 .ifPresent(booking -> itemDto.setNextBooking(BookingMapper.toShortDto(booking)));
@@ -170,7 +161,6 @@ public class ItemServiceImpl implements ItemService {
         User author = findUserById(userId);
         Item item = findItemById(itemId);
 
-        // Проверяем, что пользователь действительно брал вещь в аренду
         LocalDateTime now = LocalDateTime.now();
         boolean hasBookedAndFinished = bookingRepository
                 .existsByBookerIdAndItemIdAndStatusAndEndBefore(
