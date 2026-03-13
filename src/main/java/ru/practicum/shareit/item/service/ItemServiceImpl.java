@@ -162,11 +162,20 @@ public class ItemServiceImpl implements ItemService {
         Item item = findItemById(itemId);
 
         LocalDateTime now = LocalDateTime.now();
-        boolean hasBookedAndFinished = bookingRepository
+
+        boolean hasCompletedBooking = bookingRepository
                 .existsByBookerIdAndItemIdAndStatusAndEndBefore(
                         userId, itemId, BookingStatus.APPROVED, now);
 
-        if (!hasBookedAndFinished) {
+        boolean hasActiveBooking = bookingRepository
+                .existsByBookerIdAndItemIdAndStatusAndEndAfter(
+                        userId, itemId, BookingStatus.APPROVED, now);
+
+
+        if (!hasCompletedBooking) {
+            if (hasActiveBooking) {
+                throw new ValidationException("Нельзя оставить комментарий к активному бронированию");
+            }
             throw new ValidationException("Пользователь может оставить комментарий только после завершения аренды вещи");
         }
 
