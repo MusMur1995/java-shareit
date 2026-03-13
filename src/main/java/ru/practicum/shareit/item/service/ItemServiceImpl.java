@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
@@ -49,25 +50,42 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDto> getUserItems(Long userId) {
         findUserById(userId);
-
         List<Item> items = itemRepository.findByOwnerId(userId);
-        List<Long> itemIds = items.stream()
-                .map(Item::getId)
-                .collect(Collectors.toList());
-
-        Map<Long, List<CommentDto>> commentsByItemId = getCommentsForItems(itemIds);
-
         LocalDateTime now = LocalDateTime.now();
+
+        List<Long> itemIds = items.stream().map(Item::getId).collect(Collectors.toList());
+
+        Map<Long, List<CommentDto>> commentsByItemId = Collections.emptyMap();
+        if (!itemIds.isEmpty()) {
+            List<Comment> comments = commentRepository.findByItemIdIn(itemIds);
+            commentsByItemId = comments.stream()
+                    .collect(Collectors.groupingBy(
+                            comment -> comment.getItem().getId(),
+                            Collectors.mapping(CommentMapper::toDto, Collectors.toList())
+                    ));
+        }
+
+        final Map<Long, List<CommentDto>> finalCommentsByItemId = commentsByItemId;
 
         return items.stream()
                 .map(item -> {
-                    ItemDto itemDto = ItemMapper.toDto(item);
+                    ItemDto dto = ItemMapper.toDto(item);
 
-                    addBookingDatesToItemDto(itemDto, item.getId(), now);
+                    Booking last = bookingRepository
+                            .findFirstByItemIdAndStatusAndStartBeforeOrderByStartDesc(
+                                    item.getId(), BookingStatus.APPROVED, now)
+                            .orElse(null);
 
-                    itemDto.setComments(commentsByItemId.getOrDefault(item.getId(), Collections.emptyList()));
+                    Booking next = bookingRepository
+                            .findFirstByItemIdAndStatusAndStartAfterOrderByStartAsc(
+                                    item.getId(), BookingStatus.APPROVED, now)
+                            .orElse(null);
 
-                    return itemDto;
+                    dto.setLastBooking(BookingMapper.toShortDto(last));
+                    dto.setNextBooking(BookingMapper.toShortDto(next));
+                    dto.setComments(finalCommentsByItemId.getOrDefault(item.getId(), Collections.emptyList()));
+
+                    return dto;
                 })
                 .collect(Collectors.toList());
     }
@@ -97,20 +115,6 @@ public class ItemServiceImpl implements ItemService {
         bookingRepository.findFirstByItemIdAndStatusAndStartAfterOrderByStartAsc(
                         itemId, BookingStatus.APPROVED, now)
                 .ifPresent(booking -> itemDto.setNextBooking(BookingMapper.toShortDto(booking)));
-    }
-
-    private Map<Long, List<CommentDto>> getCommentsForItems(List<Long> itemIds) {
-        if (itemIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        List<Comment> comments = commentRepository.findByItemIdIn(itemIds);
-
-        return comments.stream()
-                .collect(Collectors.groupingBy(
-                        comment -> comment.getItem().getId(),
-                        Collectors.mapping(CommentMapper::toDto, Collectors.toList())
-                ));
     }
 
     @Override
@@ -157,35 +161,31 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public CommentDto addComment(Long userId, Long itemId, CommentCreateDto commentCreateDto) {
-        User author = findUserById(userId);
+    public CommentDto addComment(Long userId, Long itemId, CommentCreateDto dto) {
+        User user = findUserById(userId);
         Item item = findItemById(itemId);
-
         LocalDateTime now = LocalDateTime.now();
 
-        boolean hasCompletedBooking = bookingRepository
-                .existsByBookerIdAndItemIdAndStatusAndEndBefore(
-                        userId, itemId, BookingStatus.APPROVED, now);
+        boolean hasAnyFinishedBooking = bookingRepository
+                .existsByItemIdAndBookerIdAndEndBefore(itemId, userId, now);
 
-        boolean hasActiveBooking = bookingRepository
-                .existsByBookerIdAndItemIdAndStatusAndEndAfter(
-                        userId, itemId, BookingStatus.APPROVED, now);
+        boolean hasApprovedFinishedBooking = bookingRepository
+                .existsByItemIdAndBookerIdAndStatusAndEndBefore(
+                        itemId, userId, BookingStatus.APPROVED, now);
 
-
-        if (!hasCompletedBooking) {
-            if (hasActiveBooking) {
-                throw new ValidationException("Нельзя оставить комментарий к активному бронированию");
-            }
-            throw new ValidationException("Пользователь может оставить комментарий только после завершения аренды вещи");
+        if (!hasAnyFinishedBooking && !hasApprovedFinishedBooking) {
+            throw new ValidationException(
+                    "Пользователь может оставить комментарий только после завершения аренды вещи"
+            );
         }
 
         Comment comment = new Comment();
-        comment.setText(commentCreateDto.getText());
+        comment.setText(dto.getText());
+        comment.setAuthor(user);
         comment.setItem(item);
-        comment.setAuthor(author);
         comment.setCreated(now);
 
-        Comment savedComment = commentRepository.save(comment);
-        return CommentMapper.toDto(savedComment);
+        Comment saved = commentRepository.save(comment);
+        return CommentMapper.toDto(saved);
     }
 }

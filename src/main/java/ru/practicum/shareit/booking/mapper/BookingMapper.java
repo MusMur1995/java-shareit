@@ -13,6 +13,9 @@ import java.util.stream.Collectors;
 public class BookingMapper {
 
     public static BookingDto toDto(Booking booking) {
+        if (booking == null) {
+            return null;
+        }
         return new BookingDto(
                 booking.getId(),
                 booking.getStart(),
@@ -24,6 +27,9 @@ public class BookingMapper {
     }
 
     public static BookingResponseDto toResponseDto(Booking booking) {
+        if (booking == null) {
+            return null;
+        }
         return new BookingResponseDto(
                 booking.getId(),
                 booking.getStart(),
@@ -35,6 +41,9 @@ public class BookingMapper {
     }
 
     public static BookingShortDto toShortDto(Booking booking) {
+        if (booking == null) {
+            return null;
+        }
         return new BookingShortDto(
                 booking.getId(),
                 booking.getBooker().getId(),
@@ -44,12 +53,18 @@ public class BookingMapper {
     }
 
     public static List<BookingDto> toDto(List<Booking> bookings) {
+        if (bookings == null) {
+            return List.of();
+        }
         return bookings.stream()
                 .map(BookingMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     public static List<BookingResponseDto> toResponseDto(List<Booking> bookings) {
+        if (bookings == null) {
+            return List.of();
+        }
         return bookings.stream()
                 .map(BookingMapper::toResponseDto)
                 .collect(Collectors.toList());
