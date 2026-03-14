@@ -1,6 +1,7 @@
 package ru.practicum.shareit.user.mapper;
 
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserShortDto;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
@@ -27,5 +28,9 @@ public class UserMapper {
         return users.stream()
                 .map(UserMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    public static UserShortDto toShortDto(User user) {
+        return new UserShortDto(user.getId(), user.getName());
     }
 }

@@ -2,24 +2,32 @@ package ru.practicum.shareit.item.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import jakarta.validation.constraints.PositiveOrZero;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
 
-/**
- * TODO Sprint add-controllers.
- */
-@Data
-@AllArgsConstructor
+import java.util.List;
+
+@Builder
+@Getter
+@Setter
 public class ItemDto {
+
+    @PositiveOrZero
     private Long id;
 
-    @NotBlank(message = "Наименование товара не может быть пустым")
+    @NotBlank
     private String name;
 
-    @NotBlank(message = "Описание товара не может быть пустым")
+    @NotBlank
     private String description;
 
-    @NotNull(message = "Статус товара должен быть указан")
+    @NotNull
     private Boolean available;
-    private Long requestId;
+
+    private BookingShortDto lastBooking;
+    private BookingShortDto nextBooking;
+    private List<CommentDto> comments;
 }
