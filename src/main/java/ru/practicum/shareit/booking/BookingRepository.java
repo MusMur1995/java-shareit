@@ -1,55 +1,61 @@
 package ru.practicum.shareit.booking;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    List<Booking> findByBookerId(Long bookerId, Sort sort);
+    List<Booking> findByBookerIdOrderByStartDesc(Long bookerId);
 
-    List<Booking> findByBookerIdAndStartBeforeAndEndAfter(
-            Long bookerId, LocalDateTime start, LocalDateTime end, Sort sort);
 
-    List<Booking> findByBookerIdAndEndBefore(Long bookerId, LocalDateTime end, Sort sort);
+    List<Booking> findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(
+            Long bookerId, LocalDateTime start, LocalDateTime end
+    );
 
-    List<Booking> findByBookerIdAndStartAfter(Long bookerId, LocalDateTime start, Sort sort);
+    default List<Booking> findCurrentBookings(Long bookerId, LocalDateTime time) {
+        return findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(bookerId, time, time);
+    }
 
-    List<Booking> findByBookerIdAndStatus(Long bookerId, BookingStatus status, Sort sort);
 
-    @Query("SELECT b FROM Booking b WHERE b.item.owner.id = :ownerId")
-    List<Booking> findByItemOwnerId(@Param("ownerId") Long ownerId, Sort sort);
+    List<Booking> findByBookerIdAndEndBeforeOrderByStartDesc(Long bookerId, LocalDateTime time);
 
-    @Query("SELECT b FROM Booking b WHERE b.item.owner.id = :ownerId " +
-            "AND b.start < :now AND b.end > :now")
-    List<Booking> findCurrentByItemOwnerId(@Param("ownerId") Long ownerId,
-                                           @Param("now") LocalDateTime now, Sort sort);
+    List<Booking> findByBookerIdAndStartAfterOrderByStartAsc(Long bookerId, LocalDateTime time);
 
-    @Query("SELECT b FROM Booking b WHERE b.item.owner.id = :ownerId AND b.end < :now")
-    List<Booking> findPastByItemOwnerId(@Param("ownerId") Long ownerId,
-                                        @Param("now") LocalDateTime now, Sort sort);
+    List<Booking> findByBookerIdAndStatusOrderByStartDesc(Long bookerId, BookingStatus status);
 
-    @Query("SELECT b FROM Booking b WHERE b.item.owner.id = :ownerId AND b.start > :now")
-    List<Booking> findFutureByItemOwnerId(@Param("ownerId") Long ownerId,
-                                          @Param("now") LocalDateTime now, Sort sort);
+    List<Booking> findByItemOwnerIdOrderByStartDesc(Long ownerId);
 
-    List<Booking> findByItemOwnerIdAndStatus(Long ownerId, BookingStatus status, Sort sort);
 
-    List<Booking> findByItemIdAndStatus(Long itemId, BookingStatus status);
+    List<Booking> findByItemOwnerIdAndStartBeforeAndEndAfterOrderByStartDesc(
+            Long ownerId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 
-    boolean existsByItemIdAndBookerIdAndEndBefore(
-            Long itemId, Long bookerId, LocalDateTime time
+    default List<Booking> findCurrentBookingsByItemOwnerId(Long ownerId, LocalDateTime time) {
+        return findByItemOwnerIdAndStartBeforeAndEndAfterOrderByStartDesc(
+                ownerId, time, time
+        );
+    }
+
+
+    List<Booking> findByItemOwnerIdAndEndBeforeOrderByStartDesc(Long ownerId, LocalDateTime time);
+
+    List<Booking> findByItemOwnerIdAndStartAfterOrderByStartDesc(Long ownerId, LocalDateTime time);
+
+    List<Booking> findByItemOwnerIdAndStatusOrderByStartDesc(Long ownerId, BookingStatus status);
+
+    List<Booking> findByItemIdAndStartBeforeAndStatusOrderByStartDesc(
+            Long itemId, LocalDateTime time, BookingStatus status
     );
 
     List<Booking> findByItemIdAndStartAfterAndStatusOrderByStartAsc(
             Long itemId, LocalDateTime time, BookingStatus status
     );
 
-    List<Booking> findByItemIdAndStartBeforeAndStatusOrderByStartDesc(
-            Long itemId, LocalDateTime time, BookingStatus status
+    boolean existsByItemIdAndBookerIdAndEndBefore(
+            Long itemId, Long bookerId, LocalDateTime time
     );
 }

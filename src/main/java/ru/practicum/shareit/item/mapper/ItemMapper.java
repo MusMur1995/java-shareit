@@ -3,40 +3,27 @@ package ru.practicum.shareit.item.mapper;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.model.User;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class ItemMapper {
 
+
     public static ItemDto toDto(Item item) {
-        ItemDto dto = new ItemDto();
-        dto.setId(item.getId());
-        dto.setName(item.getName());
-        dto.setDescription(item.getDescription());
-        dto.setAvailable(item.isAvailable());
-
-        if (item.getRequest() != null) {
-            dto.setRequestId(item.getRequest().getId());
-        }
-
-        return dto;
+        return ItemDto.builder()
+                .id(item.getId())
+                .name(item.getName())
+                .description(item.getDescription())
+                .available(item.getAvailable())
+                .build();
     }
 
-    public static Item toEntity(ItemDto itemDto, User owner) {
+    public static Item toItem(ItemDto dto) {
         Item item = new Item();
-        item.setName(itemDto.getName());
-        item.setDescription(itemDto.getDescription());
-        item.setAvailable(itemDto.getAvailable() != null ? itemDto.getAvailable() : true);
-        item.setOwner(owner);
-        return item;
-    }
+        item.setId(dto.getId());
+        item.setName(dto.getName());
+        item.setDescription(dto.getDescription());
+        item.setAvailable(dto.getAvailable());
 
-    public static List<ItemDto> toDto(List<Item> items) {
-        return items.stream()
-                .map(ItemMapper::toDto)
-                .collect(Collectors.toList());
+        return item;
     }
 
     public static ItemShortDto toShortDto(Item item) {
