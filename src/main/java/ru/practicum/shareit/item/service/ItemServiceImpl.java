@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.service;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingStatus;
@@ -45,6 +46,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CommentDto addComment(Long userId, Long itemId, CommentCreateDto dto) {
         User user = userService.getUserById(userId);
         Item item = getItemById(itemId);
@@ -96,6 +98,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ItemDto getAboutItem(Long itemId) {
         Item item = getItemById(itemId);
         ItemDto dto = ItemMapper.toDto(item);
@@ -111,6 +114,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ItemDto> getUserItems(Long userId) {
         userService.getUserById(userId);
         List<Item> items = itemRepository.findByOwnerId(userId);

@@ -18,16 +18,14 @@ public class ItemDto {
     @PositiveOrZero
     private Long id;
 
-    @NotBlank(message = "Наименование товара не может быть пустым")
+    @NotBlank
     private String name;
 
-    @NotBlank(message = "Описание товара не может быть пустым")
+    @NotBlank
     private String description;
 
-    @NotNull(message = "Статус товара должен быть указан")
+    @NotNull
     private Boolean available;
-
-    private Long requestId;
 
     private BookingShortDto lastBooking;
     private BookingShortDto nextBooking;
