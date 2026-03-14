@@ -28,7 +28,7 @@ public class BookingController {
                                      @RequestHeader("X-Sharer-User-Id") Long userId,
                                      @RequestParam Boolean approved) {
 
-        return bookingService.confirmBooking(bookingId, userId, approved);
+        return bookingService.approveBooking(bookingId, userId, approved);
     }
 
     @GetMapping("/{bookingId}")

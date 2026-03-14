@@ -164,14 +164,4 @@ public class ItemServiceImpl implements ItemService {
         }
         return items;
     }
-
-    @Override
-    public List<Item> findByOwnerId(Long userId) {
-        return itemRepository.findByOwnerId(userId);
-    }
-
-    @Override
-    public void deleteItem(Long itemId) {
-        itemRepository.deleteById(itemId);
-    }
 }

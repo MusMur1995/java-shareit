@@ -13,6 +13,7 @@ import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.exception.AccessDeniedException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UnavailableItemException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
@@ -37,16 +38,21 @@ public class BookingServiceImpl implements BookingService {
         User booker = userService.getUserById(userId);
 
         Item item = itemRepository.findById(dto.getItemId())
-                .orElseThrow(() -> new NotFoundException("Данная вещь не зарегистрирована в каталоге"));
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Предмет с ID=%d не найден в каталоге", dto.getItemId())));
 
         if (!item.getAvailable()) {
-            throw new IllegalStateException("Вещь недоступна для бронирования");
+            throw new UnavailableItemException(
+                    String.format("Предмет с ID=%d временно недоступен для бронирования", item.getId()));
         }
         if (item.getOwner().getId().equals(userId)) {
-            throw new jakarta.validation.ValidationException("Владелец не может бронировать свою вещь");
+            throw new ValidationException(String.format("Пользователь с ID=%d не может забронировать собственную вещь с ID=%d",
+                    userId, item.getId()));
         }
         if (!dto.getEnd().isAfter(dto.getStart())) {
-            throw new ValidationException("Дата окончания должна быть позже даты начала");
+            throw new ValidationException(
+                    String.format("Дата завершения бронирования (%s) должна быть позже даты начала (%s)",
+                            dto.getEnd(), dto.getStart()));
         }
 
         Booking booking = BookingMapper.toEntity(dto);
@@ -61,19 +67,25 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingDto confirmBooking(Long bookingId, Long userId, Boolean approved) {
+    public BookingDto approveBooking(Long bookingId, Long userId, Boolean approved) {
 
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NotFoundException("Бронирование не обнаружено"));
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Запрос на бронирование с ID=%d не найден", bookingId)));
 
         if (!Objects.equals(booking.getItem().getOwner().getId(), userId)) {
-            throw new AccessDeniedException("Подтвердить или отклонить бронирование может только владелец");
+            throw new AccessDeniedException(
+                    String.format("Пользователь с ID=%d не является владельцем вещи с ID=%d. " +
+                                    "Только владелец может подтверждать или отклонять бронирование",
+                            userId, booking.getItem().getId()));
         }
 
         userService.getUserById(userId);
 
         if (booking.getStatus() != BookingStatus.WAITING) {
-            throw new IllegalStateException("Бронирование уже обработано");
+            throw new ValidationException(
+                    String.format("Невозможно изменить статус бронирования с ID=%d - текущий статус: %s",
+                            bookingId, booking.getStatus()));
         }
 
         booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
@@ -85,11 +97,15 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingDto getAboutBooking(Long userId, Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NotFoundException("Бронирование не обнаружено"));
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Информация о бронировании с ID=%d отсутствует", bookingId)));
 
         if (!Objects.equals(booking.getItem().getOwner().getId(), userId)
                 && !Objects.equals(booking.getBooker().getId(), userId)) {
-            throw new AccessDeniedException("Запрос возможен только для владельца или арендатора");
+            throw new AccessDeniedException(
+                    String.format("Пользователь с ID=%d не имеет доступа к просмотру бронирования с ID=%d. " +
+                                    "Доступ только для владельца вещи (ID=%d) или автора запроса (ID=%d)",
+                            userId, bookingId, booking.getItem().getOwner().getId(), booking.getBooker().getId()));
         }
 
         return BookingMapper.toDto(booking);
@@ -112,7 +128,9 @@ public class BookingServiceImpl implements BookingService {
             case REJECTED -> bookings =
                     bookingRepository.findByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
 
-            default -> throw new IllegalArgumentException("Некорректный параметр состояния бронирования");
+            default -> throw new ValidationException(
+                    String.format("Передан неподдерживаемый статус: '%s'. Допустимые значения: ALL, CURRENT, PAST, FUTURE, WAITING, REJECTED",
+                            state));
         }
 
         return BookingMapper.toListDto(bookings);
@@ -138,7 +156,9 @@ public class BookingServiceImpl implements BookingService {
             case REJECTED -> bookings =
                     bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
 
-            default -> throw new IllegalArgumentException("Некорректный параметр состояния бронирования");
+            default -> throw new ValidationException(
+                    String.format("Передан неподдерживаемый статус: '%s'. Допустимые значения: ALL, CURRENT, PAST, FUTURE, WAITING, REJECTED",
+                            state));
         }
 
         return BookingMapper.toListDto(bookings);
