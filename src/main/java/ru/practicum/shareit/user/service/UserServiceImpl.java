@@ -20,11 +20,6 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
-    private User findUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Не найден пользователь с id: " + userId));
-    }
-
     private void validateEmailFormat(String email) {
         if (email == null || email.isBlank()) {
             throw new ValidationException("Email не может быть пустым");
@@ -54,15 +49,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto getUserById(Long userId) {
-        User user = findUserById(userId);
-        return UserMapper.toDto(user);
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Не найден пользователь с id: " + userId));
     }
+
 
     @Override
     @Transactional
     public UserDto updateUser(Long userId, UserDto userDto) {
-        User existingUser = findUserById(userId);
+        User existingUser = getUserById(userId);
 
         if (userDto.getName() != null && !userDto.getName().isBlank()) {
             existingUser.setName(userDto.getName());
@@ -83,6 +79,12 @@ public class UserServiceImpl implements UserService {
 
         User updatedUser = userRepository.save(existingUser);
         return UserMapper.toDto(updatedUser);
+    }
+
+    @Override
+    public UserDto getAboutUser(Long id) {
+        User user = getUserById(id);
+        return UserMapper.toDto(user);
     }
 
     @Override

@@ -4,8 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
-import ru.practicum.shareit.booking.dto.BookingResponseDto;
-import ru.practicum.shareit.booking.dto.BookingState;
+import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.service.BookingService;
 
 import java.util.List;
@@ -18,14 +17,14 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    public BookingResponseDto createBooking(
+    public BookingDto createBooking(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @Valid @RequestBody BookingCreateDto bookingCreateDto) {
         return bookingService.createBooking(userId, bookingCreateDto);
     }
 
     @PatchMapping("/{bookingId}")
-    public BookingResponseDto approveBooking(
+    public BookingDto approveBooking(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @PathVariable Long bookingId,
             @RequestParam Boolean approved) {
@@ -33,14 +32,14 @@ public class BookingController {
     }
 
     @GetMapping("/{bookingId}")
-    public BookingResponseDto getBookingById(
+    public BookingDto getBookingById(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @PathVariable Long bookingId) {
         return bookingService.getBookingById(userId, bookingId);
     }
 
     @GetMapping
-    public List<BookingResponseDto> getUserBookings(
+    public List<BookingDto> getUserBookings(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @RequestParam(defaultValue = "ALL") BookingState state,
             @RequestParam(defaultValue = "0") Integer from,
@@ -49,7 +48,7 @@ public class BookingController {
     }
 
     @GetMapping("/owner")
-    public List<BookingResponseDto> getOwnerBookings(
+    public List<BookingDto> getOwnerBookings(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @RequestParam(defaultValue = "ALL") BookingState state,
             @RequestParam(defaultValue = "0") Integer from,

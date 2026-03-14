@@ -6,10 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
+import ru.practicum.shareit.booking.BookingState;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
-import ru.practicum.shareit.booking.dto.BookingResponseDto;
-import ru.practicum.shareit.booking.dto.BookingState;
+import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.exception.AccessDeniedException;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -81,7 +81,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingResponseDto createBooking(Long userId, BookingCreateDto bookingCreateDto) {
+    public BookingDto createBooking(Long userId, BookingCreateDto bookingCreateDto) {
         User booker = findUserById(userId);
         Item item = findItemById(bookingCreateDto.getItemId());
 
@@ -100,12 +100,12 @@ public class BookingServiceImpl implements BookingService {
         booking.setStatus(BookingStatus.WAITING);
 
         Booking savedBooking = bookingRepository.save(booking);
-        return BookingMapper.toResponseDto(savedBooking);
+        return BookingMapper.toDto(savedBooking);
     }
 
     @Override
     @Transactional
-    public BookingResponseDto approveBooking(Long userId, Long bookingId, Boolean approved) {
+    public BookingDto approveBooking(Long userId, Long bookingId, Boolean approved) {
         Booking booking = findBookingById(bookingId);
 
         if (!booking.getItem().getOwner().getId().equals(userId)) {
@@ -119,11 +119,11 @@ public class BookingServiceImpl implements BookingService {
         booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
 
         Booking updatedBooking = bookingRepository.save(booking);
-        return BookingMapper.toResponseDto(updatedBooking);
+        return BookingMapper.toDto(updatedBooking);
     }
 
     @Override
-    public BookingResponseDto getBookingById(Long userId, Long bookingId) {
+    public BookingDto getBookingById(Long userId, Long bookingId) {
         Booking booking = findBookingById(bookingId);
 
         if (!booking.getBooker().getId().equals(userId) &&
@@ -131,11 +131,11 @@ public class BookingServiceImpl implements BookingService {
             throw new AccessDeniedException("У вас нет доступа к этому бронированию");
         }
 
-        return BookingMapper.toResponseDto(booking);
+        return BookingMapper.toDto(booking);
     }
 
     @Override
-    public List<BookingResponseDto> getUserBookings(Long userId, BookingState state, Integer from, Integer size) {
+    public List<BookingDto> getUserBookings(Long userId, BookingState state, Integer from, Integer size) {
         findUserById(userId);
 
         LocalDateTime now = LocalDateTime.now();
@@ -167,11 +167,11 @@ public class BookingServiceImpl implements BookingService {
 
         List<Booking> pagedBookings = applyPagination(bookings, from, size);
 
-        return BookingMapper.toResponseDto(pagedBookings);
+        return BookingMapper.toDto(pagedBookings);
     }
 
     @Override
-    public List<BookingResponseDto> getOwnerBookings(Long userId, BookingState state, Integer from, Integer size) {
+    public List<BookingDto> getOwnerBookings(Long userId, BookingState state, Integer from, Integer size) {
         findUserById(userId);
 
         List<Item> userItems = itemRepository.findByOwnerId(userId);
@@ -206,7 +206,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         List<Booking> pagedBookings = applyPagination(bookings, from, size);
-        return BookingMapper.toResponseDto(pagedBookings);
+        return BookingMapper.toDto(pagedBookings);
     }
 
     private List<Booking> applyPagination(List<Booking> bookings, Integer from, Integer size) {

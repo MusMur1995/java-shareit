@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.mapper;
 
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
@@ -36,5 +37,9 @@ public class ItemMapper {
         return items.stream()
                 .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    public static ItemShortDto toShortDto(Item item) {
+        return new ItemShortDto(item.getId(), item.getName());
     }
 }

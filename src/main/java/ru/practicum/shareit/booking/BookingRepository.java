@@ -7,7 +7,6 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
@@ -40,14 +39,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByItemOwnerIdAndStatus(Long ownerId, BookingStatus status, Sort sort);
 
-    Optional<Booking> findFirstByItemIdAndStatusAndStartBeforeOrderByStartDesc(
-            Long itemId, BookingStatus status, LocalDateTime now);
-
-    Optional<Booking> findFirstByItemIdAndStatusAndStartAfterOrderByStartAsc(
-            Long itemId, BookingStatus status, LocalDateTime now);
-
     List<Booking> findByItemIdAndStatus(Long itemId, BookingStatus status);
 
-    List<Booking> findByBookerIdAndItemId(Long bookerId, Long itemId);
+    boolean existsByItemIdAndBookerIdAndEndBefore(
+            Long itemId, Long bookerId, LocalDateTime time
+    );
+    List<Booking> findByItemIdAndStartAfterAndStatusOrderByStartAsc(
+            Long itemId, LocalDateTime time, BookingStatus status
+    );
 
+    List<Booking> findByItemIdAndStartBeforeAndStatusOrderByStartDesc(
+            Long itemId, LocalDateTime time, BookingStatus status
+    );
 }
