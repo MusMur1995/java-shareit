@@ -3,7 +3,6 @@ package ru.practicum.shareit.booking.service;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingState;
@@ -31,7 +30,6 @@ public class BookingServiceImpl implements BookingService {
 
 
     @Override
-    @Transactional
     public BookingDto create(Long userId, BookingCreateDto dto) {
 
         User booker = userService.getUserById(userId);
