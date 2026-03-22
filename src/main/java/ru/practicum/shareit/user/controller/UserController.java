@@ -3,14 +3,11 @@ package ru.practicum.shareit.user.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.user.service.UserService;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
 
-/**
- * TODO Sprint add-controllers.
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
@@ -29,7 +26,7 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public UserDto getUserById(@PathVariable Long userId) {
-        return userService.getUserById(userId);
+        return userService.getAboutUser(userId);
     }
 
     @PatchMapping("/{userId}")

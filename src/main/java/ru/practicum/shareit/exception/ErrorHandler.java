@@ -31,4 +31,16 @@ public class ErrorHandler {
     public ErrorResponse handleThrowable(final Throwable e) {
         return new ErrorResponse("Ошибка на сервере", e.getMessage());
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleUnavailableItemException(final UnavailableItemException e) {
+        return new ErrorResponse("Вещь недоступна для бронирования", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleAccessDeniedException(final AccessDeniedException e) {
+        return new ErrorResponse("Доступ запрещен", e.getMessage());
+    }
 }
